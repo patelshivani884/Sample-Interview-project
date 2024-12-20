@@ -7,33 +7,38 @@ import UIKit
 
 class ANFExploreCardTableViewController: UITableViewController {
 
-    private var exploreData: [[AnyHashable: Any]]? {
+    private var exploreData: [ExploreContent] {
         if let filePath = Bundle.main.path(forResource: "exploreData", ofType: "json"),
-           let fileContent = try? Data(contentsOf: URL(fileURLWithPath: filePath)),
-           let jsonDictionary = try? JSONSerialization.jsonObject(with: fileContent, options: .mutableContainers) as? [[AnyHashable: Any]] {
-            return jsonDictionary
+           let fileContent = try? Data(contentsOf: URL(fileURLWithPath: filePath))
+        {
+            let decoder = JSONDecoder()
+            do {
+                let decodedBooks = try decoder.decode([ExploreContent].self, from: fileContent)
+                return decodedBooks
+            } catch {
+                print(error)
+            }
         }
-        return nil
+        return []
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupNavBar()
+    }
+    
+    private func setupNavBar() {
+        self.navigationItem.title = "A&F"
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return exploreData?.count ?? 0
+        return exploreData.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "exploreContentCell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: ExploreContentCell.id, for: indexPath) as? ExploreContentCell else { return UITableViewCell() }
         
-        if let titleLabel = cell.viewWithTag(1) as? UILabel,
-           let titleText = exploreData?[indexPath.row]["title"] as? String {
-            titleLabel.text = titleText
-        }
-        
-        if let imageView = cell.viewWithTag(2) as? UIImageView,
-           let name = exploreData?[indexPath.row]["backgroundImage"] as? String,
-           let image = UIImage(named: name) {
-            imageView.image = image
-        }
-        
+        cell.initData(with: exploreData[indexPath.row])
         return cell
     }
 }
